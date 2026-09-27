@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Locação de Equipamentos — Omega Construtora</title>
+<style>
+  :root{
+    --bg:#14171c; --panel:#1b1f26; --line:#2a2f38; --ink:#e8eaed; --sub:#8b93a1;
+    --accent:#f2a63a; --accent-ink:#1a1408; --ok:#4caf7d; --pend:#e2574c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+  .mono{font-family:"SFMono-Regular",Consolas,monospace}
+  header{padding:22px 24px 14px;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px}
+  h1{margin:0;font-size:1.5rem;font-weight:700;letter-spacing:-.01em}
+  h1 span{color:var(--accent)}
+  .sub{color:var(--sub);font-size:.85rem;margin-top:4px}
+  #refresh{background:var(--accent);color:var(--accent-ink);border:none;
+    padding:9px 16px;border-radius:6px;font-weight:600;cursor:pointer;font-size:.85rem}
+  #refresh:disabled{opacity:.6;cursor:wait}
+  main{padding:20px 24px 40px;max-width:1400px;margin:0 auto}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:6px;padding:14px 16px}
+  .card .n{font-size:1.4rem;font-weight:700}
+  .card .l{color:var(--sub);font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;margin-top:2px}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  select,input[type=text]{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    padding:8px 10px;border-radius:6px;font-size:.85rem}
+  input[type=text]{flex:1;min-width:180px}
+  .tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+  .tab{padding:9px 16px;cursor:pointer;color:var(--sub);font-size:.85rem;font-weight:600;
+    border-bottom:2px solid transparent}
+  .tab.on{color:var(--accent);border-color:var(--accent)}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .preset{background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    padding:7px 12px;border-radius:16px;font-size:.8rem;cursor:pointer}
+  .preset:hover{border-color:var(--accent)}
+  .groupbar{display:flex;gap:8px;align-items:center;margin-bottom:14px;font-size:.82rem;color:var(--sub)}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+  table{border-collapse:collapse;width:100%;font-size:.82rem;white-space:nowrap}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:var(--panel);color:var(--sub);text-transform:uppercase;font-size:.68rem;
+    letter-spacing:.04em;cursor:pointer;position:sticky;top:0}
+  th:hover{color:var(--ink)}
+  tbody tr:hover{background:#20242c}
+  .num{text-align:right;font-family:"SFMono-Regular",Consolas,monospace}
+  .sit{padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:600}
+  .sit-ok{background:rgba(76,175,125,.15);color:var(--ok)}
+  .sit-outro{background:rgba(226,87,76,.15);color:var(--pend)}
+  #status{color:var(--sub);font-size:.85rem;padding:40px;text-align:center}
+  details.lvl1{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+  details.lvl1 summary{padding:11px 14px;font-weight:700;border-left:3px solid var(--accent)}
+  details.lvl2{margin:0 10px 8px 20px;border-left:2px solid var(--line);border-radius:4px}
+  details.lvl2 summary{padding:8px 12px;font-weight:600;font-size:.88rem;color:var(--ink)}
+  summary{cursor:pointer;list-style:none;display:flex;gap:14px;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸";color:var(--sub);width:10px;display:inline-block}
+  details[open]>summary::before{content:"▾"}
+  summary span:first-child{flex:1}
+  summary .qtd{color:var(--sub);font-size:.78rem}
+  summary .num{min-width:110px}
+  table.itens{margin:0 10px 12px 32px;width:calc(100% - 42px);font-size:.78rem}
+  table.itens td{padding:6px 10px;border-bottom:1px solid var(--line)}
+  table.itens th{padding:4px 10px;color:var(--sub);text-transform:uppercase;font-size:.65rem;
+    letter-spacing:.03em;text-align:left;border-bottom:1px solid var(--line);cursor:default;position:static}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Locação de <span>Equipamentos</span></h1>
+    <div class="sub" id="updated">carregando…</div>
+  </div>
+  <button id="refresh">Atualizar agora</button>
+</header>
+<main>
+  <div class="cards" id="cards"></div>
+  <div class="filters" id="filters"></div>
+
+  <div class="tabs">
+    <div class="tab on" data-tab="tabela">Tabela detalhada</div>
+    <div class="tab" data-tab="analise">Análise por grupo</div>
+  </div>
+
+  <div id="status">Buscando dados da planilha…</div>
+
+  <div id="painel-tabela" class="tablewrap hidden">
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="painel-analise" class="hidden">
+    <div class="presets" id="presets"></div>
+    <div class="groupbar">
+      Agrupar por
+      <select id="g1"></select>
+      depois por
+      <select id="g2"><option value="_nenhum">(nenhum)</option></select>
+    </div>
+    <div id="arvore"></div>
+  </div>
+</main>
+<script>
+const URL_DADOS = "https://script.google.com/macros/s/AKfycbxLRS6nb0tlST55yiyarQl4EvBUJKEE68JgSpBgKUfKGLOOxHOaemqouDsTI_tGY1Khvg/exec";
+
+const FILTROS = ["EMPRESA","NATUREZA","EQUIPAMENTO","CENTRO DE CUSTO","SITUAÇÃO","MANUT."];
+const COLUNAS = ["EQUIPAMENTO","TIPO","OM","MARCA/ MODELO","EMPRESA","NATUREZA",
+  "CENTRO DE CUSTO","FRENTE","CONTRATO","PREÇO","DIAS TOTAIS","SITUAÇÃO","CHEGADA","DATA DE MOBILIZAÇÃO"];
+const CAMPOS_AGRUPAR = ["EMPRESA","EQUIPAMENTO","CENTRO DE CUSTO","FRENTE","NATUREZA","SITUAÇÃO"];
+
+const PRESETS = [
+  {nome:"Locador → Equipamento", g1:"EMPRESA", g2:"EQUIPAMENTO", filtro:{}},
+  {nome:"Equipamento → Locador", g1:"EQUIPAMENTO", g2:"EMPRESA", filtro:{}},
+  {nome:"Centro de Custo → Locador", g1:"CENTRO DE CUSTO", g2:"EMPRESA", filtro:{}},
+  {nome:"Centro de Custo → Frente", g1:"CENTRO DE CUSTO", g2:"FRENTE", filtro:{}},
+  {nome:"Locações da FAMMA", g1:"EQUIPAMENTO", g2:"CENTRO DE CUSTO", filtro:{EMPRESA:"FAMMA"}},
+  {nome:"Locações de Terceiros", g1:"EQUIPAMENTO", g2:"CENTRO DE CUSTO", filtro:{NATUREZA:"TERCEIRIZADO"}},
+];
+
+let dados = [];
+let ativos = {};
+let ordenacao = {col:null, dir:1};
+let abaAtual = "tabela";
+let campoG1 = "EMPRESA", campoG2 = "EQUIPAMENTO";
+
+function precoNum(v){
+  if(!v) return 0;
+  return parseFloat(String(v).replace("R$","").trim().replace(/\./g,"").replace(",",".")) || 0;
+}
+function dataFmt(v){
+  if(!v) return "—";
+  const d = new Date(v);
+  if(isNaN(d)) return v;
+  return d.toLocaleDateString("pt-BR");
+}
+function moeda(n){ return n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"}); }
+
+async function carregar(){
+  document.getElementById("status").classList.remove("hidden");
+  document.getElementById("status").textContent = "Buscando dados da planilha…";
+  document.getElementById("painel-tabela").classList.add("hidden");
+  document.getElementById("painel-analise").classList.add("hidden");
+  document.getElementById("refresh").disabled = true;
+  try{
+    const r = await fetch(URL_DADOS, {cache:"no-store"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    dados = await r.json();
+    document.getElementById("updated").textContent = "Atualizado em " + new Date().toLocaleString("pt-BR");
+    montarFiltros();
+    montarPresets();
+    montarSeletoresGrupo();
+    document.getElementById("status").classList.add("hidden");
+    render();
+  }catch(e){
+    document.getElementById("status").textContent =
+      "Não consegui buscar os dados agora (" + e.message + "). Confira a implantação do Apps Script e tente atualizar de novo.";
+  }finally{
+    document.getElementById("refresh").disabled = false;
+  }
+}
+
+function montarFiltros(){
+  const box = document.getElementById("filters");
+  box.innerHTML = "";
+  const busca = document.createElement("input");
+  busca.type="text"; busca.placeholder="Buscar equipamento, OM, placa…";
+  busca.oninput = ()=>{ativos._busca = busca.value.toLowerCase(); render();};
+  box.appendChild(busca);
+  FILTROS.forEach(campo=>{
+    const vals = [...new Set(dados.map(d=>d[campo]).filter(v=>v!==undefined && v!==""))].sort();
+    const sel = document.createElement("select");
+    sel.dataset.campo = campo;
+    sel.innerHTML = `<option value="">${campo}: todos</option>` +
+      vals.map(v=>`<option value="${v}">${v}</option>`).join("");
+    sel.onchange = ()=>{ativos[campo]=sel.value; render();};
+    box.appendChild(sel);
+  });
+}
+
+function montarPresets(){
+  const box = document.getElementById("presets");
+  box.innerHTML = PRESETS.map((p,i)=>`<div class="preset" data-i="${i}">${p.nome}</div>`).join("");
+  box.querySelectorAll(".preset").forEach(el=>{
+    el.onclick = ()=>{
+      const p = PRESETS[el.dataset.i];
+      ativos = {}; // limpa filtros anteriores
+      Object.entries(p.filtro).forEach(([k,v])=>ativos[k]=v);
+      document.querySelectorAll("#filters select").forEach(s=>{
+        s.value = ativos[s.dataset.campo] || "";
+      });
+      campoG1 = p.g1; campoG2 = p.g2;
+      document.getElementById("g1").value = campoG1;
+      document.getElementById("g2").value = campoG2;
+      abrirAba("analise");
+      render();
+    };
+  });
+}
+
+function montarSeletoresGrupo(){
+  const g1 = document.getElementById("g1"), g2 = document.getElementById("g2");
+  g1.innerHTML = CAMPOS_AGRUPAR.map(c=>`<option value="${c}">${c}</option>`).join("");
+  g2.innerHTML = `<option value="_nenhum">(nenhum)</option>` + CAMPOS_AGRUPAR.map(c=>`<option value="${c}">${c}</option>`).join("");
+  g1.value = campoG1; g2.value = campoG2;
+  g1.onchange = ()=>{campoG1=g1.value; render();};
+  g2.onchange = ()=>{campoG2=g2.value; render();};
+}
+
+function abrirAba(nome){
+  abaAtual = nome;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on", t.dataset.tab===nome));
+  document.getElementById("painel-tabela").classList.toggle("hidden", nome!=="tabela");
+  document.getElementById("painel-analise").classList.toggle("hidden", nome!=="analise");
+}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>abrirAba(t.dataset.tab));
+
+function filtrar(){
+  return dados.filter(d=>{
+    for(const campo of FILTROS){
+      if(ativos[campo] && String(d[campo])!==ativos[campo]) return false;
+    }
+    if(ativos._busca){
+      const alvo = (d["EQUIPAMENTO"]+" "+d["OM"]+" "+d["PLACA PATRIMÔNIO"]+" "+d["MARCA/ MODELO"]).toLowerCase();
+      if(!alvo.includes(ativos._busca)) return false;
+    }
+    return true;
+  });
+}
+
+function agrupar(rows, campo){
+  const mapa = {};
+  rows.forEach(r=>{
+    const k = r[campo] || "—";
+    (mapa[k] = mapa[k]||[]).push(r);
+  });
+  return Object.entries(mapa).map(([k,itens])=>({
+    chave:k, itens, qtd:itens.length, soma:itens.reduce((s,d)=>s+precoNum(d["PREÇO"]),0)
+  })).sort((a,b)=>b.soma-a.soma);
+}
+
+function itensTabela(itens){
+  return `<table class="itens">
+    <thead><tr><th>EQUIPAMENTO</th><th>OM</th><th>MARCA/ MODELO</th><th>EMPRESA</th>
+    <th>CENTRO DE CUSTO</th><th>SITUAÇÃO</th><th class="num">PREÇO</th></tr></thead>
+    <tbody>${itens.map(d=>`
+    <tr><td>${d["EQUIPAMENTO"]||"—"}</td><td class="mono">${d["OM"]||""}</td>
+    <td>${d["MARCA/ MODELO"]||""}</td><td>${d["EMPRESA"]||""}</td>
+    <td>${d["CENTRO DE CUSTO"]||""}</td>
+    <td><span class="sit ${d['SITUAÇÃO']==='OK'?'sit-ok':'sit-outro'}">${d["SITUAÇÃO"]||""}</span></td>
+    <td class="num">${moeda(precoNum(d["PREÇO"]))}</td></tr>`).join("")}</tbody></table>`;
+}
+
+function renderArvore(rows){
+  const g1 = agrupar(rows, campoG1);
+  return g1.map(grupo1=>{
+    let inner;
+    if(campoG2 && campoG2!=="_nenhum" && campoG2!==campoG1){
+      const g2 = agrupar(grupo1.itens, campoG2);
+      inner = g2.map(grupo2=>`
+        <details class="lvl2">
+          <summary><span>${grupo2.chave}</span><span class="qtd">${grupo2.qtd} itens</span><span class="num">${moeda(grupo2.soma)}</span></summary>
+          ${itensTabela(grupo2.itens)}
+        </details>`).join("");
+    } else {
+      inner = itensTabela(grupo1.itens);
+    }
+    return `
+      <details class="lvl1">
+        <summary><span>${grupo1.chave}</span><span class="qtd">${grupo1.qtd} itens</span><span class="num">${moeda(grupo1.soma)}</span></summary>
+        ${inner}
+      </details>`;
+  }).join("");
+}
+
+function render(){
+  const linhas = filtrar();
+  if(ordenacao.col){
+    linhas.sort((a,b)=>{
+      let x=a[ordenacao.col], y=b[ordenacao.col];
+      if(ordenacao.col==="PREÇO") {x=precoNum(x); y=precoNum(y);}
+      return (x>y?1:x<y?-1:0)*ordenacao.dir;
+    });
+  }
+  const total = linhas.reduce((s,d)=>s+precoNum(d["PREÇO"]),0);
+  const ok = linhas.filter(d=>d["SITUAÇÃO"]==="OK").length;
+  document.getElementById("cards").innerHTML = `
+    <div class="card"><div class="n">${linhas.length}</div><div class="l">Equipamentos</div></div>
+    <div class="card"><div class="n">${moeda(total)}</div><div class="l">Total (filtro atual)</div></div>
+    <div class="card"><div class="n">${ok}</div><div class="l">Situação OK</div></div>
+    <div class="card"><div class="n">${linhas.length-ok}</div><div class="l">Outras situações</div></div>`;
+
+  document.getElementById("thead").innerHTML =
+    COLUNAS.map(c=>`<th data-c="${c}">${c}${ordenacao.col===c?(ordenacao.dir>0?" ▲":" ▼"):""}</th>`).join("");
+  document.querySelectorAll("#thead th").forEach(th=>{
+    th.onclick=()=>{
+      const c = th.dataset.c;
+      ordenacao.dir = (ordenacao.col===c) ? -ordenacao.dir : 1;
+      ordenacao.col = c;
+      render();
+    };
+  });
+  document.getElementById("tbody").innerHTML = linhas.map(d=>`
+    <tr>
+      ${COLUNAS.map(c=>{
+        if(c==="PREÇO") return `<td class="num">${moeda(precoNum(d[c]))}</td>`;
+        if(c==="CHEGADA"||c==="DATA DE MOBILIZAÇÃO") return `<td>${dataFmt(d[c])}</td>`;
+        if(c==="SITUAÇÃO") return `<td><span class="sit ${d[c]==='OK'?'sit-ok':'sit-outro'}">${d[c]||"—"}</span></td>`;
+        if(c==="DIAS TOTAIS") return `<td class="num">${d[c]??"—"}</td>`;
+        return `<td>${d[c]??"—"}</td>`;
+      }).join("")}
+    </tr>`).join("");
+
+  document.getElementById("arvore").innerHTML = renderArvore(linhas);
+  document.getElementById("painel-tabela").classList.toggle("hidden", abaAtual!=="tabela");
+  document.getElementById("painel-analise").classList.toggle("hidden", abaAtual!=="analise");
+}
+
+document.getElementById("refresh").onclick = carregar;
+carregar();
+</script>
+</body>
+</html>
